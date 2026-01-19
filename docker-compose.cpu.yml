@@ -1,0 +1,12 @@
+services:
+  mlsharp:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+    env_file:
+      - .env
+    ports:
+      - "11011:11011"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models

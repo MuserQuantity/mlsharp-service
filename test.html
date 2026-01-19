@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MLSharp Test Client</title>
+  <style>
+    :root {
+      --bg: #f7f7f5;
+      --surface: #ffffff;
+      --surface-2: #f0f1f2;
+      --border: #e2e4e7;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --accent: #1d4ed8;
+      --accent-2: #e8eefc;
+      --success: #15803d;
+      --error: #b91c1c;
+      --radius: 12px;
+      --shadow: 0 6px 18px rgba(12, 15, 20, 0.06);
+      --font: "Gill Sans", "Gill Sans MT", "Trebuchet MS", "Helvetica Neue", Helvetica, sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #eaf1ff 0, transparent 60%),
+        radial-gradient(900px 600px at 90% 0%, #e7f6ef 0, transparent 60%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 32px 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 980px;
+      display: grid;
+      gap: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      margin: 0 0 14px 0;
+      font-size: 18px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    @media (max-width: 720px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .browser-layout { grid-template-columns: 1fr; }
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-2);
+      background: #fff;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .file-area {
+      padding: 14px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+    }
+
+    .file-area input { width: 100%; }
+
+    .status {
+      font-family: var(--mono);
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      height: 180px;
+      overflow: auto;
+      font-size: 12px;
+    }
+
+    .log-info { color: #cbd5f5; }
+    .log-success { color: #86efac; }
+    .log-error { color: #fca5a5; }
+    .log-warn { color: #fde68a; }
+
+    .downloads {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .download-btn {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .download-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #fff;
+    }
+
+    .muted { color: var(--muted); }
+
+    /* Model Browser Styles */
+    .browser-container {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .browser-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 16px;
+      height: 320px;
+    }
+
+    @media (max-width: 640px) {
+      .browser-layout { grid-template-columns: 1fr; height: auto; }
+    }
+
+    .asset-list {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .asset-header {
+      background: var(--surface-2);
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .asset-items {
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .asset-item {
+      padding: 10px 12px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .asset-item:last-child { border-bottom: 0; }
+
+    .asset-item:hover { background: var(--surface-2); }
+
+    .asset-item.selected {
+      background: var(--accent-2);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .preview-stage {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stage-canvas {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      font-family: var(--mono);
+      font-size: 12px;
+      background: 
+        linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%, #0a0a0a),
+        linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%, #0a0a0a);
+      background-color: #050505;
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
+    }
+
+    .stage-toolbar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .stage-canvas img,
+    .stage-canvas video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .preview-media {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-media img,
+    .preview-media video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+
+    .stage-overlay {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.9;
+    }
+
+    .viewer-fab {
+      position: absolute;
+      right: 12px;
+      bottom: 12px;
+      width: 200px;
+      background: rgba(10, 12, 15, 0.78);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+      color: #e5e7eb;
+      z-index: 12;
+    }
+
+    .viewer-fab.hidden .viewer-fab-body { display: none; }
+
+    .viewer-fab-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .viewer-fab-body {
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .fab-toggle {
+      border: 0;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .fab-toggle:hover { background: rgba(255, 255, 255, 0.2); }
+
+    /* Fullscreen PLY Viewer Modal */
+    .ply-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0a0c10;
+      z-index: 9999;
+      flex-direction: column;
+    }
+
+    .ply-modal.active {
+      display: flex;
+    }
+
+    .ply-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: rgba(15, 18, 25, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      flex-shrink: 0;
+    }
+
+    .ply-modal-title {
+      color: #e5e7eb;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .ply-modal-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .ply-modal-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .ply-modal-canvas {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ply-viewfinder {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      height: 80%;
+      aspect-ratio: 3/4;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-radius: 4px;
+      pointer-events: none;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.15);
+      z-index: 5;
+    }
+
+    .ply-viewfinder::before {
+      content: 'Camera View';
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .ply-viewfinder.hidden {
+      display: none;
+    }
+
+    .ply-modal-controls {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      width: 200px;
+      background: rgba(10, 12, 15, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      color: #e5e7eb;
+      z-index: 10;
+    }
+
+    .ply-modal-controls-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .ply-modal-controls-body {
+      padding: 12px 14px;
+    }
+
+    .ply-modal-controls.hidden .ply-modal-controls-body {
+      display: none;
+    }
+
+    .slider-row {
+      margin-bottom: 12px;
+    }
+
+    .slider-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .slider-label {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .slider-value {
+      color: rgba(255, 255, 255, 0.9);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .slider-row input[type="range"] {
+      width: 100%;
+      margin: 0;
+      height: 4px;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #3b82f6;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .control-divider {
+      border: none;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin: 12px 0;
+    }
+
+    .shortcut-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+
+    .shortcut-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .shortcut-label {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .shortcut-key {
+      font-family: var(--mono);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+
+    .toggle-label {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>MLSharp Test Client</h1>
+      <p class="subtitle">Single image predict and render</p>
+    </header>
+
+    <div class="card">
+      <h2>Connection</h2>
+      <div class="grid grid-2">
+        <div>
+          <label for="baseUrl">Base URL</label>
+          <input id="baseUrl" type="text" placeholder="http://localhost:11011">
+        </div>
+        <div>
+          <label for="apiKey">API Key</label>
+          <input id="apiKey" type="password" placeholder="Bearer token">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Predict</h2>
+      <div class="grid">
+        <div class="file-area">
+          <label for="uploadInput">Upload image (max 10MB)</label>
+          <input id="uploadInput" type="file" accept="image/*">
+        </div>
+        <div class="row">
+          <button class="btn" onclick="runPredict()">Upload and Predict</button>
+          <button class="btn secondary" onclick="refreshTask()">Refresh Task</button>
+        </div>
+        <div class="grid grid-2">
+          <div>
+            <label for="fileId">File ID</label>
+            <input id="fileId" type="text" placeholder="" readonly>
+          </div>
+          <div>
+            <label for="taskId">Task ID</label>
+            <input id="taskId" type="text" placeholder="" readonly>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Render</h2>
+      <div class="grid grid-3">
+        <div>
+          <label for="trajectoryType">Trajectory</label>
+          <select id="trajectoryType">
+            <option value="swipe">swipe</option>
+            <option value="shake">shake</option>
+            <option value="rotate">rotate</option>
+            <option value="rotate_forward">rotate_forward</option>
+          </select>
+        </div>
+        <div>
+          <label for="lookatMode">Look At</label>
+          <select id="lookatMode">
+            <option value="point">point</option>
+            <option value="ahead">ahead</option>
+          </select>
+        </div>
+        <div>
+          <label for="maxDisparity">Max Disparity</label>
+          <input id="maxDisparity" type="number" step="0.01">
+        </div>
+        <div>
+          <label for="maxZoom">Max Zoom</label>
+          <input id="maxZoom" type="number" step="0.01">
+        </div>
+        <div>
+          <label for="distanceM">Distance M</label>
+          <input id="distanceM" type="number" step="0.1">
+        </div>
+        <div>
+          <label for="numSteps">Num Steps</label>
+          <input id="numSteps" type="number" step="1">
+        </div>
+        <div>
+          <label for="numRepeats">Num Repeats</label>
+          <input id="numRepeats" type="number" step="1">
+        </div>
+      </div>
+      <div class="row" style="margin-top: 12px;">
+        <button class="btn" onclick="runRender()">Start Render</button>
+        <button class="btn secondary" onclick="resetDefaults()">Reset Defaults</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Results</h2>
+      <div class="downloads" id="downloads"></div>
+
+      <div class="browser-container">
+        <h2>Model Browser</h2>
+        <div class="browser-layout">
+          <div class="asset-list">
+            <div class="asset-header">Project Assets</div>
+            <div class="asset-items" id="assetItems"></div>
+          </div>
+          <div class="preview-stage">
+            <div class="stage-canvas" id="previewCanvas">
+              <span>Select an asset to preview.</span>
+            </div>
+            <div class="stage-overlay" id="stageOverlay">
+              <div class="control-row">
+                <span class="control-label">Rotate</span>
+                <span class="key-badge">Drag</span>
+              </div>
+              <div class="control-row">
+                <span class="control-label">Move</span>
+                <span class="key-badge">WASD</span>
+              </div>
+              <div class="control-row">
+                <span class="control-label">Zoom</span>
+                <span class="key-badge">Scroll</span>
+              </div>
+            </div>
+            <div class="stage-toolbar">
+              <button class="tool-btn" id="previewInfoBtn">Info</button>
+              <button class="tool-btn" id="previewOpenBtn">Open</button>
+              <button class="tool-btn" id="previewDownloadBtn" style="margin-left: auto;">Download</button>
+            </div>
+            <div class="viewer-fab" id="viewerFab">
+              <div class="viewer-fab-header">
+                <span>Controls</span>
+                <button class="fab-toggle" id="viewerFabToggle">Hide</button>
+              </div>
+              <div class="viewer-fab-body">
+                <div class="control-row">
+                  <span class="control-label">Rotate</span>
+                  <span class="key-badge">Drag</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-label">Move</span>
+                  <span class="key-badge">WASD</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-label">Pan</span>
+                  <span class="key-badge">Arrows</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-label">Zoom</span>
+                  <span class="key-badge">Scroll</span>
+                </div>
+                <div class="control-row">
+                  <span class="control-label">Reset</span>
+                  <span class="key-badge">R</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 12px;">
+        <label>Logs</label>
+        <div class="status" id="logBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLY Fullscreen Viewer Modal -->
+  <div class="ply-modal" id="plyModal">
+    <div class="ply-modal-header">
+      <span class="ply-modal-title" id="plyModalTitle">Gaussians Viewer</span>
+      <button class="ply-modal-close" id="plyModalClose">Close (ESC)</button>
+    </div>
+    <div class="ply-modal-canvas" id="plyModalCanvas">
+      <div class="ply-viewfinder" id="plyViewfinder"></div>
+    </div>
+    <div class="ply-modal-controls" id="plyModalControls">
+      <div class="ply-modal-controls-header">
+        <span>Settings</span>
+        <button class="fab-toggle" id="plyModalControlsToggle">Hide</button>
+      </div>
+      <div class="ply-modal-controls-body">
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="slider-label">Scale</span>
+            <span class="slider-value" id="plyScaleValue">3.0</span>
+          </div>
+          <input type="range" min="0.1" max="3.0" step="0.1" value="3.0" id="plyScaleSlider">
+        </div>
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="slider-label">Opacity</span>
+            <span class="slider-value" id="plyOpacityValue">1.0</span>
+          </div>
+          <input type="range" min="0.1" max="2.0" step="0.1" value="1.0" id="plyOpacitySlider">
+        </div>
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="slider-label">Exposure</span>
+            <span class="slider-value" id="plyExposureValue">1.0</span>
+          </div>
+          <input type="range" min="0.5" max="3.0" step="0.1" value="1.0" id="plyExposureSlider">
+        </div>
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="slider-label">Speed</span>
+            <span class="slider-value" id="plySpeedValue">1.0</span>
+          </div>
+          <input type="range" min="0.1" max="5.0" step="0.1" value="1.0" id="plySpeedSlider">
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Frame</span>
+          <button class="fab-toggle" id="plyFrameToggle">Hide</button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Ratio</span>
+          <select id="plyFrameRatio" style="background:rgba(255,255,255,0.12);border:none;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;cursor:pointer;">
+            <option value="3/4">3:4</option>
+            <option value="4/3">4:3</option>
+            <option value="9/16">9:16</option>
+            <option value="16/9">16:9</option>
+            <option value="1/1">1:1</option>
+            <option value="2/3">2:3</option>
+            <option value="3/2">3:2</option>
+          </select>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">Screenshot</span>
+          <button class="fab-toggle" id="plyScreenshotBtn">Save</button>
+        </div>
+        <hr class="control-divider">
+        <div class="shortcut-row">
+          <span class="shortcut-label">Rotate</span>
+          <span class="shortcut-key">Drag</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Move</span>
+          <span class="shortcut-key">WASD</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Up / Down</span>
+          <span class="shortcut-key">E / Q</span>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Reset</span>
+          <span class="shortcut-key">R</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.147.0/examples/js/loaders/PLYLoader.js"></script>
+  <script>
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const STORAGE_KEY = 'mlsharp_test_state';
+    const DEFAULTS = {
+      baseUrl: 'http://localhost:11011',
+      maxDisparity: 0.08,
+      maxZoom: 0.15,
+      distanceM: 0.0,
+      numSteps: 60,
+      numRepeats: 1,
+      trajectoryType: 'rotate_forward',
+      lookatMode: 'point'
+    };
+
+    const els = {
+      baseUrl: document.getElementById('baseUrl'),
+      apiKey: document.getElementById('apiKey'),
+      uploadInput: document.getElementById('uploadInput'),
+      fileId: document.getElementById('fileId'),
+      taskId: document.getElementById('taskId'),
+      trajectoryType: document.getElementById('trajectoryType'),
+      lookatMode: document.getElementById('lookatMode'),
+      maxDisparity: document.getElementById('maxDisparity'),
+      maxZoom: document.getElementById('maxZoom'),
+      distanceM: document.getElementById('distanceM'),
+      numSteps: document.getElementById('numSteps'),
+      numRepeats: document.getElementById('numRepeats'),
+      downloads: document.getElementById('downloads'),
+      logBox: document.getElementById('logBox'),
+      assetItems: document.getElementById('assetItems'),
+      previewCanvas: document.getElementById('previewCanvas'),
+      previewInfoBtn: document.getElementById('previewInfoBtn'),
+      previewOpenBtn: document.getElementById('previewOpenBtn'),
+      previewDownloadBtn: document.getElementById('previewDownloadBtn'),
+      viewerFab: document.getElementById('viewerFab'),
+      viewerFabToggle: document.getElementById('viewerFabToggle'),
+      stageOverlay: document.getElementById('stageOverlay'),
+      plyModal: document.getElementById('plyModal'),
+      plyModalTitle: document.getElementById('plyModalTitle'),
+      plyModalClose: document.getElementById('plyModalClose'),
+      plyModalCanvas: document.getElementById('plyModalCanvas'),
+      plyModalControls: document.getElementById('plyModalControls'),
+      plyModalControlsToggle: document.getElementById('plyModalControlsToggle')
+    };
+
+    let pollTimer = null;
+    let activeAsset = null;
+    let activeAssetUrl = null;
+    let viewer = null;
+    let modalViewer = null;
+    let plyRenderer = null;
+    let plyRenderOnce = null;
+
+    function log(message, type) {
+      const line = document.createElement('div');
+      const klass = type ? `log-${type}` : 'log-info';
+      const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+      line.className = klass;
+      line.textContent = `[${time}] ${message}`;
+      els.logBox.appendChild(line);
+      els.logBox.scrollTop = els.logBox.scrollHeight;
+    }
+
+    function toNumberOrNull(value) {
+      if (value === '' || value === null || value === undefined) return null;
+      const num = Number(value);
+      return Number.isNaN(num) ? null : num;
+    }
+
+    function saveState() {
+      const state = {
+        baseUrl: els.baseUrl.value.trim(),
+        apiKey: els.apiKey.value.trim(),
+        fileId: els.fileId.value.trim(),
+        taskId: els.taskId.value.trim()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const state = JSON.parse(raw);
+        if (state.baseUrl) els.baseUrl.value = state.baseUrl;
+        if (state.apiKey) els.apiKey.value = state.apiKey;
+        if (state.fileId) {
+          els.fileId.value = state.fileId;
+          renderDownloads();
+        }
+        if (state.taskId) els.taskId.value = state.taskId;
+      } catch (e) {
+        return;
+      }
+    }
+
+    function setDefaults() {
+      if (!els.baseUrl.value) els.baseUrl.value = DEFAULTS.baseUrl;
+      els.maxDisparity.value = DEFAULTS.maxDisparity;
+      els.maxZoom.value = DEFAULTS.maxZoom;
+      els.distanceM.value = DEFAULTS.distanceM;
+      els.numSteps.value = DEFAULTS.numSteps;
+      els.numRepeats.value = DEFAULTS.numRepeats;
+      els.trajectoryType.value = DEFAULTS.trajectoryType;
+      els.lookatMode.value = DEFAULTS.lookatMode;
+    }
+
+    function resetDefaults() {
+      setDefaults();
+      saveState();
+    }
+
+    function baseUrl() {
+      return (els.baseUrl.value || DEFAULTS.baseUrl).replace(/\/$/, '');
+    }
+
+    async function fetchAPI(endpoint, options) {
+      const headers = options && options.headers ? options.headers : {};
+      if (els.apiKey.value) headers['Authorization'] = `Bearer ${els.apiKey.value}`;
+      const res = await fetch(`${baseUrl()}${endpoint}`, { ...options, headers });
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok) {
+        const errText = contentType.includes('application/json') ? JSON.stringify(await res.json()) : await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText}`);
+      }
+      if (contentType.includes('application/json')) return await res.json();
+      return await res.text();
+    }
+
+    async function runPredict() {
+      const file = els.uploadInput.files[0];
+      if (!file) return log('No file selected', 'warn');
+      if (file.size > MAX_FILE_SIZE) return log('File exceeds 10MB', 'error');
+
+      const formData = new FormData();
+      formData.append('upload', file);
+
+      try {
+        log(`Uploading ${file.name}`, 'info');
+        const res = await fetchAPI('/v1/predict', { method: 'POST', body: formData });
+        if (res.file_id) els.fileId.value = res.file_id;
+        if (res.task_id) els.taskId.value = res.task_id;
+        saveState();
+        renderDownloads();
+        if (res.task_id) startPolling(res.task_id);
+        log('Predict started', 'success');
+      } catch (e) {
+        log(e.message, 'error');
+      }
+    }
+
+    async function runRender() {
+      const fileId = els.fileId.value.trim();
+      if (!fileId) return log('No file_id available', 'warn');
+
+      const payload = {
+        file_id: fileId,
+        trajectory_type: els.trajectoryType.value,
+        lookat_mode: els.lookatMode.value,
+        max_disparity: toNumberOrNull(els.maxDisparity.value),
+        max_zoom: toNumberOrNull(els.maxZoom.value),
+        distance_m: toNumberOrNull(els.distanceM.value),
+        num_steps: toNumberOrNull(els.numSteps.value),
+        num_repeats: toNumberOrNull(els.numRepeats.value)
+      };
+
+      try {
+        const res = await fetchAPI('/v1/render', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.task_id) els.taskId.value = res.task_id;
+        saveState();
+        if (res.task_id) startPolling(res.task_id);
+        log('Render started', 'success');
+      } catch (e) {
+        log(e.message, 'error');
+      }
+    }
+
+    function startPolling(taskId) {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTask(taskId);
+      pollTimer = setInterval(() => pollTask(taskId), 2000);
+    }
+
+    async function pollTask(taskId) {
+      if (!taskId) return;
+      try {
+        const res = await fetchAPI(`/v1/tasks/${taskId}`, { method: 'GET' });
+        const status = (res.status || 'unknown').toLowerCase();
+        log(`Task ${taskId}: ${status}`, status.includes('fail') ? 'error' : 'info');
+        if (status === 'completed' || status === 'failed') {
+          if (pollTimer) clearInterval(pollTimer);
+          pollTimer = null;
+        }
+      } catch (e) {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = null;
+        log(e.message, 'error');
+      }
+    }
+
+    function refreshTask() {
+      const taskId = els.taskId.value.trim();
+      if (!taskId) return log('No task_id to poll', 'warn');
+      pollTask(taskId);
+    }
+
+    function renderDownloads() {
+      const fileId = els.fileId.value.trim();
+      if (!fileId) {
+        els.downloads.innerHTML = '';
+        renderModelBrowser([]);
+        return;
+      }
+      const items = [
+        { label: 'Original', endpoint: `/v1/files/${fileId}/original`, name: 'original', type: 'image' },
+        { label: 'Gaussians', endpoint: `/v1/files/${fileId}/gaussians`, name: 'gaussians.ply', type: 'ply' },
+        { label: 'Render', endpoint: `/v1/files/${fileId}/render`, name: 'render.mp4', type: 'video' },
+        { label: 'Render Depth', endpoint: `/v1/files/${fileId}/render-depth`, name: 'render.depth.mp4', type: 'video' }
+      ];
+      els.downloads.innerHTML = items.map(item =>
+        `<div class="download-btn" onclick="downloadFile('${item.endpoint}', '${item.name}')">
+          <div>${item.label}</div>
+          <div class="muted">${item.name}</div>
+        </div>`
+      ).join('');
+      renderModelBrowser(items);
+    }
+
+    function clearActiveAssetUrl() {
+      if (activeAssetUrl) {
+        window.URL.revokeObjectURL(activeAssetUrl);
+        activeAssetUrl = null;
+      }
+    }
+
+    function setPreviewContent(content) {
+      els.previewCanvas.innerHTML = '';
+      els.previewCanvas.appendChild(content);
+    }
+
+    function getPreviewSize() {
+      const rect = els.previewCanvas.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      return { width, height };
+    }
+
+    function clearPreviewStage() {
+      if (viewer) {
+        viewer.dispose();
+        viewer = null;
+      }
+      els.previewCanvas.innerHTML = '';
+      showViewerControls(false);
+      showOverlayHint(false);
+    }
+
+    function createMediaWrapper() {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'preview-media';
+      return wrapper;
+    }
+
+    async function getAssetBlobUrl(endpoint) {
+      const headers = {};
+      if (els.apiKey.value) headers['Authorization'] = `Bearer ${els.apiKey.value}`;
+      const res = await fetch(`${baseUrl()}${endpoint}`, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      return window.URL.createObjectURL(blob);
+    }
+
+    async function downloadFile(endpoint, filename) {
+      try {
+        const url = await getAssetBlobUrl(endpoint);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        log(`Downloaded ${filename}`, 'success');
+      } catch (e) {
+        log(e.message, 'error');
+      }
+    }
+
+    function renderModelBrowser(items) {
+      if (!els.assetItems) return;
+      els.assetItems.innerHTML = '';
+      if (!items || items.length === 0) {
+        clearActiveAssetUrl();
+        activeAsset = null;
+        clearPreviewStage();
+        els.previewCanvas.textContent = 'No assets available.';
+        return;
+      }
+      items.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'asset-item';
+        row.dataset.assetIndex = String(index);
+
+        const name = document.createElement('span');
+        name.textContent = item.name;
+
+        const type = document.createElement('span');
+        type.className = 'muted';
+        type.textContent = item.type;
+
+        row.appendChild(name);
+        row.appendChild(type);
+        row.addEventListener('click', () => selectAsset(index, items));
+
+        els.assetItems.appendChild(row);
+      });
+      selectAsset(0, items, true);
+    }
+
+    async function selectAsset(index, items, skipLog) {
+      if (!items[index]) return;
+      activeAsset = items[index];
+      Array.from(els.assetItems.children).forEach((child, idx) => {
+        child.classList.toggle('selected', idx === index);
+      });
+      try {
+        clearActiveAssetUrl();
+        clearPreviewStage();
+        els.previewCanvas.textContent = 'Loading preview...';
+        const url = await getAssetBlobUrl(activeAsset.endpoint);
+        activeAssetUrl = url;
+        if (activeAsset.type === 'image') {
+          const wrapper = createMediaWrapper();
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = activeAsset.name;
+          wrapper.appendChild(img);
+          setPreviewContent(wrapper);
+          showOverlayHint(true);
+          showViewerControls(false);
+        } else if (activeAsset.type === 'video') {
+          const wrapper = createMediaWrapper();
+          const video = document.createElement('video');
+          video.src = url;
+          video.controls = true;
+          wrapper.appendChild(video);
+          setPreviewContent(wrapper);
+          showOverlayHint(true);
+          showViewerControls(false);
+        } else if (activeAsset.type === 'ply') {
+          // Show a placeholder in the preview area with a button to open fullscreen viewer
+          showOverlayHint(false);
+          showViewerControls(false);
+          const plyPlaceholder = document.createElement('div');
+          plyPlaceholder.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;';
+          plyPlaceholder.innerHTML = `
+            <div style="color:#9ca3af;font-size:13px;">3D Gaussians Model</div>
+            <button class="btn" style="padding:12px 24px;" id="openPlyViewerBtn">Open Fullscreen Viewer</button>
+          `;
+          setPreviewContent(plyPlaceholder);
+          const openBtn = document.getElementById('openPlyViewerBtn');
+          if (openBtn) {
+            openBtn.addEventListener('click', () => {
+              openPlyModal(url, activeAsset.name);
+            });
+          }
+        } else {
+          const info = document.createElement('div');
+          info.style.textAlign = 'center';
+          info.style.color = '#9ca3af';
+          info.textContent = 'Preview not available. Use Download or Open.';
+          setPreviewContent(info);
+          showOverlayHint(true);
+          showViewerControls(false);
+        }
+        if (!skipLog) log(`Selected ${activeAsset.name}`, 'info');
+      } catch (e) {
+        els.previewCanvas.textContent = 'Failed to load preview.';
+        log(e.message, 'error');
+      }
+    }
+
+    function openActiveAsset() {
+      if (!activeAsset) return log('No asset selected', 'warn');
+      const url = activeAssetUrl;
+      if (!url) return log('Asset not loaded yet', 'warn');
+      window.open(url, '_blank');
+    }
+
+    function showActiveAssetInfo() {
+      if (!activeAsset) return log('No asset selected', 'warn');
+      log(`Asset: ${activeAsset.name} (${activeAsset.type})`, 'info');
+    }
+
+    function showOverlayHint(show) {
+      if (!els.stageOverlay) return;
+      els.stageOverlay.style.display = show ? 'block' : 'none';
+    }
+
+    function showViewerControls(show) {
+      if (!els.viewerFab) return;
+      els.viewerFab.style.display = show ? 'block' : 'none';
+    }
+
+    function renderPlyPreview(url) {
+      if (typeof THREE === 'undefined' || !THREE.PLYLoader || !THREE.OrbitControls) {
+        throw new Error('three.js or loaders not available');
+      }
+      const canvasWrapper = document.createElement('div');
+      canvasWrapper.style.width = '100%';
+      canvasWrapper.style.height = '100%';
+      canvasWrapper.style.position = 'relative';
+      const size = getPreviewSize();
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b0f14);
+      const camera = new THREE.PerspectiveCamera(60, size.width / size.height, 0.01, 2000);
+      camera.position.set(0, 0.6, 2.5);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio || 1);
+      renderer.setSize(size.width, size.height);
+      canvasWrapper.appendChild(renderer.domElement);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambient);
+      const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+      directional.position.set(2, 3, 4);
+      scene.add(directional);
+
+      const grid = new THREE.GridHelper(5, 10, 0x1f2937, 0x111827);
+      grid.position.y = -0.5;
+      scene.add(grid);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.rotateSpeed = 0.7;
+      controls.zoomSpeed = 0.9;
+      controls.panSpeed = 0.8;
+
+      const loader = new THREE.PLYLoader();
+      let mesh = null;
+      let bounds = null;
+
+      const movement = {
+        forward: 0,
+        backward: 0,
+        left: 0,
+        right: 0,
+        up: 0,
+        down: 0,
+        panLeft: 0,
+        panRight: 0,
+        panUp: 0,
+        panDown: 0,
+        boost: false
+      };
+
+      const physics = {
+        velocity: new THREE.Vector3(),
+        inputVector: new THREE.Vector3(),
+        moveDir: new THREE.Vector3()
+      };
+
+      function applyCameraMovement(delta) {
+        if (!camera) return;
+        const speedBase = 2.4;
+        const acceleration = 18.0;
+        const friction = 10.0;
+        const maxSpeed = speedBase * (movement.boost ? 4.0 : 1.0);
+        const direction = new THREE.Vector3();
+        camera.getWorldDirection(direction).normalize();
+
+        const right = new THREE.Vector3();
+        right.crossVectors(direction, camera.up).normalize();
+
+        physics.inputVector.set(0, 0, 0);
+        physics.inputVector.z = movement.backward - movement.forward;
+        physics.inputVector.x = movement.right - movement.left;
+        physics.inputVector.y = movement.up - movement.down;
+
+        if (physics.inputVector.lengthSq() > 0) physics.inputVector.normalize();
+
+        physics.moveDir.set(0, 0, 0);
+        if (physics.inputVector.z !== 0) physics.moveDir.addScaledVector(direction, -physics.inputVector.z);
+        if (physics.inputVector.x !== 0) physics.moveDir.addScaledVector(right, physics.inputVector.x);
+        if (physics.inputVector.y !== 0) physics.moveDir.addScaledVector(camera.up, physics.inputVector.y);
+        if (physics.moveDir.lengthSq() > 0) physics.moveDir.normalize();
+
+        if (physics.moveDir.lengthSq() > 0) {
+          physics.velocity.addScaledVector(physics.moveDir, acceleration * delta);
+        }
+
+        const damping = Math.exp(-friction * delta);
+        physics.velocity.multiplyScalar(damping);
+        if (physics.velocity.length() > maxSpeed) physics.velocity.setLength(maxSpeed);
+
+        camera.position.addScaledVector(physics.velocity, delta);
+
+        const panSpeed = 1.2 * delta;
+        if (movement.panLeft) controls.target.addScaledVector(right, -panSpeed);
+        if (movement.panRight) controls.target.addScaledVector(right, panSpeed);
+        if (movement.panUp) controls.target.addScaledVector(camera.up, panSpeed);
+        if (movement.panDown) controls.target.addScaledVector(camera.up, -panSpeed);
+      }
+
+      function onKeyChange(event, isDown) {
+        if (event.target && ['INPUT', 'TEXTAREA'].includes(event.target.tagName)) return;
+        switch (event.code) {
+          case 'KeyW':
+            movement.forward = isDown ? 1 : 0;
+            break;
+          case 'KeyS':
+            movement.backward = isDown ? 1 : 0;
+            break;
+          case 'KeyA':
+            movement.left = isDown ? 1 : 0;
+            break;
+          case 'KeyD':
+            movement.right = isDown ? 1 : 0;
+            break;
+          case 'KeyQ':
+            movement.down = isDown ? 1 : 0;
+            break;
+          case 'KeyE':
+            movement.up = isDown ? 1 : 0;
+            break;
+          case 'ShiftLeft':
+            movement.boost = isDown;
+            break;
+          case 'ArrowUp':
+            movement.panUp = isDown ? 1 : 0;
+            break;
+          case 'ArrowDown':
+            movement.panDown = isDown ? 1 : 0;
+            break;
+          case 'ArrowLeft':
+            movement.panLeft = isDown ? 1 : 0;
+            break;
+          case 'ArrowRight':
+            movement.panRight = isDown ? 1 : 0;
+            break;
+          case 'KeyR':
+            if (isDown && bounds) {
+              camera.position.copy(bounds.cameraPosition);
+              controls.target.copy(bounds.center);
+            }
+            break;
+          default:
+            return;
+        }
+        event.preventDefault();
+      }
+
+      function onKeyDown(event) { onKeyChange(event, true); }
+      function onKeyUp(event) { onKeyChange(event, false); }
+
+      document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('keyup', onKeyUp);
+
+      function cleanupKeys() {
+        document.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('keyup', onKeyUp);
+      }
+
+      viewer = {
+        resize() {
+          const next = getPreviewSize();
+          camera.aspect = next.width / next.height;
+          camera.updateProjectionMatrix();
+          renderer.setSize(next.width, next.height);
+        },
+        dispose() {
+          cleanupKeys();
+          controls.dispose();
+          renderer.dispose();
+          if (mesh) {
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+          }
+        }
+      };
+
+      loader.load(url, geometry => {
+        geometry.computeVertexNormals();
+        let material;
+        if (geometry.hasAttribute('color')) {
+          material = new THREE.PointsMaterial({ size: 0.01, vertexColors: true });
+        } else {
+          material = new THREE.PointsMaterial({ size: 0.01, color: 0x93c5fd });
+        }
+        mesh = new THREE.Points(geometry, material);
+        scene.add(mesh);
+
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const distance = maxDim * 1.8 || 2.5;
+        const cameraPosition = new THREE.Vector3(center.x + distance, center.y + distance * 0.5, center.z + distance);
+        camera.position.copy(cameraPosition);
+        controls.target.copy(center);
+        bounds = { center, cameraPosition };
+      }, undefined, error => {
+        log('Failed to load PLY preview', 'error');
+        console.error(error);
+      });
+
+      let frameId = null;
+      let lastTime = performance.now();
+      function animate(time) {
+        frameId = requestAnimationFrame(animate);
+        const delta = Math.min(0.05, (time - lastTime) / 1000);
+        lastTime = time;
+        applyCameraMovement(delta);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate(lastTime);
+
+      viewer.dispose = ((dispose) => () => {
+        if (frameId) cancelAnimationFrame(frameId);
+        dispose();
+      })(viewer.dispose);
+
+      setPreviewContent(canvasWrapper);
+    }
+
+    function getModalCanvasSize() {
+      const rect = els.plyModalCanvas.getBoundingClientRect();
+      return { width: Math.max(1, Math.floor(rect.width)), height: Math.max(1, Math.floor(rect.height)) };
+    }
+
+    // Spherical Harmonics constant
+    const SH_C0 = 0.28209479177387814;
+
+    // Custom shaders for 3D Gaussian Splatting
+    const splatVertexShader = `
+      uniform float uSplatScale;
+      attribute vec3 instPosition;
+      attribute vec4 instRotation;
+      attribute vec3 instScale;
+      attribute vec4 instColor;
+      varying vec4 vColor;
+      varying vec2 vUv;
+
+      mat3 getRotationMatrix(vec4 q) {
+        float x = q.x, y = q.y, z = q.z, w = q.w;
+        float x2 = x + x, y2 = y + y, z2 = z + z;
+        float xx = x * x2, xy = x * y2, xz = x * z2;
+        float yy = y * y2, yz = y * z2, zz = z * z2;
+        float wx = w * x2, wy = w * y2, wz = w * z2;
+        return mat3(
+          1.0 - (yy + zz), xy - wz, xz + wy,
+          xy + wz, 1.0 - (xx + zz), yz - wx,
+          xz - wy, yz + wx, 1.0 - (xx + yy)
+        );
+      }
+
+      void main() {
+        vUv = uv;
+        vColor = instColor;
+        vec3 pos = position * instScale * uSplatScale;
+        pos = getRotationMatrix(instRotation) * pos;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(pos + instPosition, 1.0);
+      }
+    `;
+
+    const splatFragmentShader = `
+      uniform float uOpacity;
+      uniform float uBrightness;
+      varying vec4 vColor;
+      varying vec2 vUv;
+
+      void main() {
+        vec2 c = vUv * 2.0 - 1.0;
+        if (dot(c, c) > 1.0) discard;
+        float a = exp(-dot(c, c) * 2.0) * vColor.a * uOpacity;
+        if (a < 0.05) discard;
+        gl_FragColor = vec4(vColor.rgb * uBrightness, a);
+      }
+    `;
+
+    async function parsePlyForSplatting(url) {
+      const response = await fetch(url);
+      const buffer = await response.arrayBuffer();
+      const dec = new TextDecoder();
+      const headBytes = new Uint8Array(buffer, 0, Math.min(buffer.byteLength, 8000));
+      const headStr = dec.decode(headBytes);
+      const endIdx = headStr.indexOf("end_header");
+      if (endIdx < 0) throw new Error("Header not found");
+
+      // Find body start (skip \r\n or \n after end_header)
+      let bodyStart = endIdx + 10;
+      if (headBytes[bodyStart] === 13) bodyStart++;
+      if (headBytes[bodyStart] === 10) bodyStart++;
+
+      const headerLines = headStr.substring(0, endIdx).split('\n');
+      let vertexCount = 0;
+      let propMap = {};
+      let currentElement = '';
+      let currentOffset = 0;
+      let vertexStride = 0;
+
+      // Type sizes
+      const typeSizes = {
+        char: 1, uchar: 1, int8: 1, uint8: 1,
+        short: 2, ushort: 2, int16: 2, uint16: 2,
+        int: 4, uint: 4, int32: 4, uint32: 4,
+        float: 4, float32: 4,
+        double: 8, float64: 8
+      };
+
+      headerLines.forEach(line => {
+        const parts = line.trim().split(/\s+/);
+        if (parts[0] === 'element') {
+          if (currentElement === 'vertex') vertexStride = currentOffset;
+          currentElement = parts[1];
+          currentOffset = 0;
+          if (parts[1] === 'vertex') vertexCount = parseInt(parts[2]);
+        } else if (parts[0] === 'property') {
+          const type = parts[1].toLowerCase();
+          const size = typeSizes[type] || 4;
+          if (currentElement === 'vertex') {
+            propMap[parts[parts.length - 1]] = { offset: currentOffset };
+          }
+          currentOffset += size;
+        }
+      });
+      if (currentElement === 'vertex') vertexStride = currentOffset;
+
+      console.log('PLY:', { vertexCount, vertexStride, bodyStart });
+
+      const view = new DataView(buffer);
+      const posBuffer = new Float32Array(vertexCount * 3);
+      const rotBuffer = new Float32Array(vertexCount * 4);
+      const scaleBuffer = new Float32Array(vertexCount * 3);
+      const colBuffer = new Float32Array(vertexCount * 4);
+
+      let validCount = 0;
+      let fileOffset = bodyStart;
+
+      const off = {
+        x: propMap['x']?.offset,
+        y: propMap['y']?.offset,
+        z: propMap['z']?.offset,
+        op: propMap['opacity']?.offset,
+        dc0: propMap['f_dc_0']?.offset,
+        rot0: propMap['rot_0']?.offset,
+        s0: propMap['scale_0']?.offset
+      };
+
+      const hasRot = off.rot0 !== undefined;
+      const hasScale = off.s0 !== undefined;
+      const hasColor = off.dc0 !== undefined;
+      const minOpacity = 0.05;
+
+      for (let i = 0; i < vertexCount; i++) {
+        if (fileOffset + vertexStride > buffer.byteLength) break;
+
+        const x = view.getFloat32(fileOffset + off.x, true);
+        if (isNaN(x)) { fileOffset += vertexStride; continue; }
+
+        let opacity = 1.0;
+        if (off.op !== undefined) {
+          opacity = 1.0 / (1.0 + Math.exp(-view.getFloat32(fileOffset + off.op, true)));
+        }
+        if (opacity < minOpacity) { fileOffset += vertexStride; continue; }
+
+        posBuffer[validCount * 3] = x;
+        posBuffer[validCount * 3 + 1] = view.getFloat32(fileOffset + off.y, true);
+        posBuffer[validCount * 3 + 2] = view.getFloat32(fileOffset + off.z, true);
+
+        if (hasRot) {
+          // rot_0, rot_1, rot_2, rot_3 are stored consecutively
+          rotBuffer[validCount * 4] = view.getFloat32(fileOffset + off.rot0 + 4, true);     // x
+          rotBuffer[validCount * 4 + 1] = view.getFloat32(fileOffset + off.rot0 + 8, true); // y
+          rotBuffer[validCount * 4 + 2] = view.getFloat32(fileOffset + off.rot0 + 12, true);// z
+          rotBuffer[validCount * 4 + 3] = view.getFloat32(fileOffset + off.rot0, true);     // w
+        } else {
+          rotBuffer[validCount * 4 + 3] = 1;
+        }
+
+        if (hasScale) {
+          // scale_0, scale_1, scale_2 are stored consecutively
+          scaleBuffer[validCount * 3] = Math.exp(view.getFloat32(fileOffset + off.s0, true));
+          scaleBuffer[validCount * 3 + 1] = Math.exp(view.getFloat32(fileOffset + off.s0 + 4, true));
+          scaleBuffer[validCount * 3 + 2] = Math.exp(view.getFloat32(fileOffset + off.s0 + 8, true));
+        } else {
+          scaleBuffer[validCount * 3] = 0.1;
+          scaleBuffer[validCount * 3 + 1] = 0.1;
+          scaleBuffer[validCount * 3 + 2] = 0.1;
+        }
+
+        if (hasColor) {
+          // f_dc_0, f_dc_1, f_dc_2 are stored consecutively
+          colBuffer[validCount * 4] = 0.5 + SH_C0 * view.getFloat32(fileOffset + off.dc0, true);
+          colBuffer[validCount * 4 + 1] = 0.5 + SH_C0 * view.getFloat32(fileOffset + off.dc0 + 4, true);
+          colBuffer[validCount * 4 + 2] = 0.5 + SH_C0 * view.getFloat32(fileOffset + off.dc0 + 8, true);
+        } else {
+          colBuffer[validCount * 4] = 0.5;
+          colBuffer[validCount * 4 + 1] = 0.5;
+          colBuffer[validCount * 4 + 2] = 0.5;
+        }
+        colBuffer[validCount * 4 + 3] = opacity;
+
+        validCount++;
+        fileOffset += vertexStride;
+      }
+
+      return {
+        pos: posBuffer.slice(0, validCount * 3),
+        rot: rotBuffer.slice(0, validCount * 4),
+        scale: scaleBuffer.slice(0, validCount * 3),
+        color: colBuffer.slice(0, validCount * 4),
+        count: validCount
+      };
+    }
+
+    function createSplatMesh(data, uniforms) {
+      // Base quad geometry for each splat
+      const baseGeo = new THREE.PlaneGeometry(1, 1);
+      const geo = new THREE.InstancedBufferGeometry();
+
+      // Important: disable frustum culling and set large bounding sphere
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 50);
+      geo.frustumCulled = false;
+
+      geo.index = baseGeo.index;
+      geo.attributes.position = baseGeo.attributes.position;
+      geo.attributes.uv = baseGeo.attributes.uv;
+
+      // Instance attributes
+      geo.setAttribute('instPosition', new THREE.InstancedBufferAttribute(data.pos, 3));
+      geo.setAttribute('instRotation', new THREE.InstancedBufferAttribute(data.rot, 4));
+      geo.setAttribute('instScale', new THREE.InstancedBufferAttribute(data.scale, 3));
+      geo.setAttribute('instColor', new THREE.InstancedBufferAttribute(data.color, 4));
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: splatVertexShader,
+        fragmentShader: splatFragmentShader,
+        side: THREE.DoubleSide,
+        depthWrite: true,
+        depthTest: true
+      });
+
+      return new THREE.Mesh(geo, material);
+    }
+
+    function openPlyModal(url, title) {
+      if (typeof THREE === 'undefined') {
+        log('three.js not available', 'error');
+        return;
+      }
+
+      closePlyModal();
+      els.plyModal.classList.add('active');
+      els.plyModalTitle.textContent = title || 'PLY Viewer';
+      document.body.style.overflow = 'hidden';
+
+      const size = getModalCanvasSize();
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x121212);
+      scene.fog = new THREE.FogExp2(0x121212, 0.02);
+
+      const camera = new THREE.PerspectiveCamera(60, size.width / size.height, 0.1, 5000);
+      camera.position.set(0, 0, 3);
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: false,
+        powerPreference: 'high-performance',
+        stencil: false,
+        depth: true,
+        preserveDrawingBuffer: true
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
+      renderer.setSize(size.width, size.height);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      els.plyModalCanvas.appendChild(renderer.domElement);
+
+      const grid = new THREE.GridHelper(100, 100, 0x333333, 0x1a1a1a);
+      grid.material.opacity = 0.3;
+      grid.material.transparent = true;
+      grid.position.y = -2;
+      scene.add(grid);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.rotateSpeed = 0.6;
+      controls.zoomSpeed = 1.2;
+      controls.panSpeed = 0.8;
+
+      // Uniforms for shader
+      const uniforms = {
+        uSplatScale: { value: 3.0 },
+        uOpacity: { value: 1.0 },
+        uBrightness: { value: 1.0 }
+      };
+
+      let splatMesh = null;
+      let bounds = null;
+
+      // Slider controls
+      const scaleSlider = document.getElementById('plyScaleSlider');
+      const opacitySlider = document.getElementById('plyOpacitySlider');
+      const exposureSlider = document.getElementById('plyExposureSlider');
+      const speedSlider = document.getElementById('plySpeedSlider');
+      const scaleValue = document.getElementById('plyScaleValue');
+      const opacityValue = document.getElementById('plyOpacityValue');
+      const exposureValue = document.getElementById('plyExposureValue');
+      const speedValue = document.getElementById('plySpeedValue');
+
+      let moveSpeed = 1.0;
+
+      function updateUniforms() {
+        uniforms.uSplatScale.value = parseFloat(scaleSlider.value);
+        uniforms.uOpacity.value = parseFloat(opacitySlider.value);
+        uniforms.uBrightness.value = parseFloat(exposureSlider.value);
+        scaleValue.textContent = scaleSlider.value;
+        opacityValue.textContent = opacitySlider.value;
+        exposureValue.textContent = exposureSlider.value;
+      }
+
+      function updateSpeed() {
+        moveSpeed = parseFloat(speedSlider.value);
+        speedValue.textContent = speedSlider.value;
+      }
+
+      scaleSlider.addEventListener('input', updateUniforms);
+      opacitySlider.addEventListener('input', updateUniforms);
+      exposureSlider.addEventListener('input', updateUniforms);
+      speedSlider.addEventListener('input', updateSpeed);
+
+      const movement = {
+        forward: 0, backward: 0, left: 0, right: 0,
+        up: 0, down: 0, boost: false
+      };
+
+      const physics = {
+        velocity: new THREE.Vector3()
+      };
+
+      function applyCameraMovement(delta) {
+        const speedBase = 5.0 * moveSpeed;
+        const acceleration = 25.0 * moveSpeed;
+        const friction = 10.0;
+        const maxSpeed = speedBase * (movement.boost ? 4.0 : 1.0);
+        const direction = new THREE.Vector3();
+        camera.getWorldDirection(direction).normalize();
+        const right = new THREE.Vector3().crossVectors(direction, camera.up).normalize();
+
+        const input = new THREE.Vector3(
+          movement.right - movement.left,
+          movement.up - movement.down,
+          movement.backward - movement.forward
+        );
+        if (input.lengthSq() > 0) input.normalize();
+
+        const moveDir = new THREE.Vector3();
+        if (input.z !== 0) moveDir.addScaledVector(direction, -input.z);
+        if (input.x !== 0) moveDir.addScaledVector(right, input.x);
+        if (input.y !== 0) moveDir.addScaledVector(camera.up, input.y);
+        if (moveDir.lengthSq() > 0) moveDir.normalize();
+
+        if (moveDir.lengthSq() > 0) {
+          physics.velocity.addScaledVector(moveDir, acceleration * delta);
+        }
+        physics.velocity.multiplyScalar(Math.exp(-friction * delta));
+        if (physics.velocity.length() > maxSpeed) physics.velocity.setLength(maxSpeed);
+
+        // Move both camera and target together to prevent direction flip
+        const movement_delta = physics.velocity.clone().multiplyScalar(delta);
+        camera.position.add(movement_delta);
+        controls.target.add(movement_delta);
+      }
+
+      function onKeyChange(event, isDown) {
+        if (event.target && ['INPUT', 'TEXTAREA'].includes(event.target.tagName)) return;
+        if (event.code === 'Escape' && isDown) {
+          closePlyModal();
+          return;
+        }
+        switch (event.code) {
+          case 'KeyW': movement.forward = isDown ? 1 : 0; break;
+          case 'KeyS': movement.backward = isDown ? 1 : 0; break;
+          case 'KeyA': movement.left = isDown ? 1 : 0; break;
+          case 'KeyD': movement.right = isDown ? 1 : 0; break;
+          case 'KeyQ': movement.down = isDown ? 1 : 0; break;
+          case 'KeyE': movement.up = isDown ? 1 : 0; break;
+          case 'ShiftLeft': case 'ShiftRight': movement.boost = isDown; break;
+          case 'KeyR':
+            if (isDown && bounds) {
+              camera.up.set(0, 1, 0);
+              camera.position.copy(bounds.cameraPosition);
+              controls.target.copy(bounds.center);
+              physics.velocity.set(0, 0, 0);
+            }
+            break;
+          default: return;
+        }
+        event.preventDefault();
+      }
+
+      function onKeyDown(event) { onKeyChange(event, true); }
+      function onKeyUp(event) { onKeyChange(event, false); }
+
+      document.addEventListener('keydown', onKeyDown);
+      document.addEventListener('keyup', onKeyUp);
+
+      let frameId = null;
+      let lastTime = performance.now();
+
+      function animate(time) {
+        frameId = requestAnimationFrame(animate);
+        const delta = Math.min(0.05, (time - lastTime) / 1000);
+        lastTime = time;
+        applyCameraMovement(delta);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      // Store renderer and render function for screenshot
+      plyRenderer = renderer;
+      plyRenderOnce = () => renderer.render(scene, camera);
+
+      modalViewer = {
+        resize() {
+          const next = getModalCanvasSize();
+          camera.aspect = next.width / next.height;
+          camera.updateProjectionMatrix();
+          renderer.setSize(next.width, next.height);
+        },
+        dispose() {
+          if (frameId) cancelAnimationFrame(frameId);
+          document.removeEventListener('keydown', onKeyDown);
+          document.removeEventListener('keyup', onKeyUp);
+          scaleSlider.removeEventListener('input', updateUniforms);
+          opacitySlider.removeEventListener('input', updateUniforms);
+          exposureSlider.removeEventListener('input', updateUniforms);
+          controls.dispose();
+          renderer.dispose();
+          if (splatMesh) {
+            splatMesh.geometry.dispose();
+            splatMesh.material.dispose();
+          }
+          els.plyModalCanvas.innerHTML = '';
+          // Reset sliders
+          scaleSlider.value = 3.0; scaleValue.textContent = '3.0';
+          opacitySlider.value = 1.0; opacityValue.textContent = '1.0';
+          exposureSlider.value = 1.0; exposureValue.textContent = '1.0';
+        }
+      };
+
+      // Load and parse PLY
+      parsePlyForSplatting(url).then(data => {
+        splatMesh = createSplatMesh(data, uniforms);
+        splatMesh.rotation.x = Math.PI; // Flip for 3DGS coordinate system
+        scene.add(splatMesh);
+
+        // Calculate viewing distance from position data (matching reference implementation)
+        let d = 0;
+        const p = data.pos;
+        const sampleCount = Math.min(data.count, 100);
+        for (let i = 0; i < sampleCount * 3; i += 3) {
+          d += Math.sqrt(p[i] * p[i] + p[i + 1] * p[i + 1] + p[i + 2] * p[i + 2]);
+        }
+        const radius = (d / sampleCount) || 5;
+
+        // For single-image 3DGS, original camera is at/near origin
+        // Set camera very close to origin for original view
+        camera.up.set(0, 1, 0);
+        camera.position.set(0, 0, 0.1);
+        camera.lookAt(0, 0, -1);
+        controls.target.set(0, 0, -1);
+
+        grid.position.y = -2;
+
+        bounds = {
+          center: new THREE.Vector3(0, 0, -1),
+          cameraPosition: new THREE.Vector3(0, 0, 0.1)
+        };
+        log('PLY loaded - ' + data.count.toLocaleString() + ' splats', 'success');
+      }).catch(error => {
+        log('Failed to load PLY: ' + error.message, 'error');
+        console.error(error);
+      });
+
+      animate(lastTime);
+    }
+
+    function closePlyModal() {
+      if (modalViewer) {
+        modalViewer.dispose();
+        modalViewer = null;
+      }
+      els.plyModal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function wireModelBrowserActions() {
+      if (!els.previewInfoBtn) return;
+      els.previewInfoBtn.addEventListener('click', showActiveAssetInfo);
+      els.previewOpenBtn.addEventListener('click', openActiveAsset);
+      els.previewDownloadBtn.addEventListener('click', () => {
+        if (!activeAsset) return log('No asset selected', 'warn');
+        downloadFile(activeAsset.endpoint, activeAsset.name);
+      });
+      if (els.viewerFabToggle) {
+        els.viewerFabToggle.addEventListener('click', () => {
+          els.viewerFab.classList.toggle('hidden');
+          els.viewerFabToggle.textContent = els.viewerFab.classList.contains('hidden') ? 'Show' : 'Hide';
+        });
+      }
+      // PLY Modal events
+      if (els.plyModalClose) {
+        els.plyModalClose.addEventListener('click', closePlyModal);
+      }
+      if (els.plyModalControlsToggle) {
+        els.plyModalControlsToggle.addEventListener('click', () => {
+          els.plyModalControls.classList.toggle('hidden');
+          els.plyModalControlsToggle.textContent = els.plyModalControls.classList.contains('hidden') ? 'Show' : 'Hide';
+        });
+      }
+      // Frame toggle
+      const frameToggle = document.getElementById('plyFrameToggle');
+      const viewfinder = document.getElementById('plyViewfinder');
+      if (frameToggle && viewfinder) {
+        frameToggle.addEventListener('click', () => {
+          viewfinder.classList.toggle('hidden');
+          frameToggle.textContent = viewfinder.classList.contains('hidden') ? 'Show' : 'Hide';
+        });
+      }
+      // Frame ratio selector
+      const frameRatioSelect = document.getElementById('plyFrameRatio');
+      if (frameRatioSelect && viewfinder) {
+        frameRatioSelect.addEventListener('change', () => {
+          viewfinder.style.aspectRatio = frameRatioSelect.value;
+        });
+      }
+      // Screenshot button
+      const screenshotBtn = document.getElementById('plyScreenshotBtn');
+      if (screenshotBtn) {
+        screenshotBtn.addEventListener('click', () => {
+          if (!plyRenderer || !plyRenderOnce) {
+            log('Renderer not ready', 'error');
+            return;
+          }
+
+          const glCanvas = els.plyModalCanvas.querySelector('canvas');
+          if (!glCanvas) return;
+
+          // Get viewfinder bounds relative to canvas (in CSS pixels)
+          const canvasRect = glCanvas.getBoundingClientRect();
+          const frameRect = viewfinder.getBoundingClientRect();
+
+          // Store original settings
+          const originalPixelRatio = plyRenderer.getPixelRatio();
+          const originalSize = plyRenderer.getSize(new THREE.Vector2());
+
+          // Temporarily increase resolution for high quality screenshot
+          const hiResRatio = 2.0;
+          plyRenderer.setPixelRatio(hiResRatio);
+          plyRenderer.setSize(canvasRect.width, canvasRect.height);
+
+          // Render one frame and wait for it to complete
+          plyRenderOnce();
+
+          // Force GL to finish rendering before capture
+          const gl = plyRenderer.getContext();
+          gl.finish();
+
+          // Calculate crop area at high resolution
+          const cropX = (frameRect.left - canvasRect.left) * hiResRatio;
+          const cropY = (frameRect.top - canvasRect.top) * hiResRatio;
+          const cropWidth = frameRect.width * hiResRatio;
+          const cropHeight = frameRect.height * hiResRatio;
+
+          // Create output canvas with no alpha
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = cropWidth;
+          tempCanvas.height = cropHeight;
+          const ctx = tempCanvas.getContext('2d', { alpha: false });
+
+          // Fill with black background
+          ctx.fillStyle = '#121212';
+          ctx.fillRect(0, 0, cropWidth, cropHeight);
+
+          // Draw cropped region directly from WebGL canvas
+          ctx.drawImage(
+            glCanvas,
+            cropX, cropY, cropWidth, cropHeight,
+            0, 0, cropWidth, cropHeight
+          );
+
+          // Download as JPG
+          const link = document.createElement('a');
+          link.download = 'screenshot_' + Date.now() + '.jpg';
+          link.href = tempCanvas.toDataURL('image/jpeg', 0.95);
+          link.click();
+
+          // Restore original settings
+          plyRenderer.setPixelRatio(originalPixelRatio);
+          plyRenderer.setSize(originalSize.x, originalSize.y);
+          plyRenderOnce();
+
+          log('Screenshot saved', 'success');
+        });
+      }
+      window.addEventListener('resize', () => {
+        if (viewer) viewer.resize();
+        if (modalViewer) modalViewer.resize();
+      });
+    }
+
+    ['input', 'change'].forEach(evt => {
+      els.baseUrl.addEventListener(evt, saveState);
+      els.apiKey.addEventListener(evt, saveState);
+    });
+
+    loadState();
+    setDefaults();
+    renderDownloads();
+    wireModelBrowserActions();
+  </script>
+</body>
+</html>

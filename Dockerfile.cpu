@@ -1,0 +1,35 @@
+FROM condaforge/miniforge3:24.3.0-0
+
+SHELL ["/bin/bash", "-lc"]
+
+WORKDIR /app
+
+ENV CONDA_ENV=mlsharp
+ENV PYTHON_VERSION=3.13
+
+RUN conda create -n "$CONDA_ENV" python="$PYTHON_VERSION" -y
+
+RUN conda run -n "$CONDA_ENV" pip install \
+  torch torchvision \
+  --index-url https://download.pytorch.org/whl/cpu \
+  --progress-bar on
+
+COPY requirements.txt /app/requirements.txt
+RUN conda run -n "$CONDA_ENV" pip install \
+  -r /app/requirements.txt \
+  -i https://mirrors.aliyun.com/pypi/simple/ \
+  --progress-bar on
+
+RUN conda run -n "$CONDA_ENV" pip install \
+  "git+https://github.com/apple/ml-sharp" \
+  -i https://mirrors.aliyun.com/pypi/simple/ \
+  --progress-bar on
+
+COPY app /app/app
+
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 11011
+
+CMD ["/bin/bash", "-lc", "conda run --no-capture-output -n mlsharp uvicorn app.main:app --host 0.0.0.0 --port 11011 --log-level info --access-log"]
