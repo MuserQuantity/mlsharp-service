@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.api import routes
 from app.core.config import settings
@@ -45,6 +48,14 @@ async def on_startup() -> None:
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
+
+
+@app.get("/")
+async def index():
+    test_path = Path(__file__).resolve().parents[1] / "test.html"
+    if not test_path.exists():
+        raise HTTPException(status_code=404, detail="test.html not found")
+    return FileResponse(test_path)
 
 
 app.include_router(routes.router)
